@@ -148,7 +148,7 @@ FOCUS_TOLERANCE = 100
 
 # ระยะที่ใช้แก้ในแต่ละครั้ง
 
-CORRECTION_DISTANCE = 5
+CORRECTION_DISTANCE = 10
 
 CORRECTION_SPEED = 20
 
@@ -183,3 +183,22 @@ QR_REENTRY_REQUIRED = True
 # ==========================================================
 
 MISSION_START_MODE = "MANUAL"
+
+# ==========================================================
+# CAMERA
+# ==========================================================
+
+# AUTO = กล้องลงพื้นสุด
+CAMERA_AUTO_ANGLE = -90
+
+# MANUAL = กล้องมุมกลาง
+CAMERA_MANUAL_ANGLE = 0
+
+# เวลารอหลังสั่งเปลี่ยนโหมด
+CAMERA_MODE_CHANGE_DELAY = 3.0
+
+# ==========================================================
+# CAMERA MANUAL CONTROL
+# ==========================================================
+
+CAMERA_MANUAL_STEP = 5

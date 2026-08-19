@@ -5,6 +5,17 @@ import pyhula
 
 class HulaBridge:
 
+    # ==========================================================
+    # CONFIG
+    # ==========================================================
+
+    # เวลาสูงสุดที่ยอมรอ Hula เชื่อมต่อ
+    CONNECT_TIMEOUT = 15.0
+
+    # ==========================================================
+    # INIT
+    # ==========================================================
+
     def __init__(self):
 
         self.api = None
@@ -24,8 +35,10 @@ class HulaBridge:
 
         self.command_lock = threading.Lock()
 
+        # รอได้ 1 command
         self.pending_command = None
 
+        # มี command กำลังทำงาน
         self.busy = False
 
         # ==========================================================
@@ -47,6 +60,7 @@ class HulaBridge:
         # ==========================================================
 
         self.connect_event = threading.Event()
+
         self.connect_result = False
 
     # ==========================================================
@@ -61,13 +75,11 @@ class HulaBridge:
 
         try:
 
-            result = int(
+            return int(
                 round(
                     float(value)
                 )
             )
-
-            return result
 
         except (
             TypeError,
@@ -91,6 +103,7 @@ class HulaBridge:
         self.running = True
 
         self.connect_event.clear()
+
         self.connect_result = False
 
         self.worker = threading.Thread(
@@ -105,7 +118,45 @@ class HulaBridge:
             "Connecting to Hula..."
         )
 
-        self.connect_event.wait()
+        # ------------------------------------------------------
+        # WAIT WITH TIMEOUT
+        # ------------------------------------------------------
+
+        connected_in_time = (
+            self.connect_event.wait(
+                timeout=self.CONNECT_TIMEOUT
+            )
+        )
+
+        # ------------------------------------------------------
+        # CONNECTION TIMEOUT
+        # ------------------------------------------------------
+
+        if not connected_in_time:
+
+            print(
+                f"Hula connection timeout "
+                f"after {self.CONNECT_TIMEOUT:.1f}s"
+            )
+
+            self.running = False
+
+            if self.worker is not None:
+
+                self.worker.join(
+                    timeout=1.0
+                )
+
+            self.worker = None
+
+            self.connected = False
+            self.api = None
+
+            return False
+
+        # ------------------------------------------------------
+        # CONNECTION FAILED
+        # ------------------------------------------------------
 
         if not self.connect_result:
 
@@ -114,6 +165,17 @@ class HulaBridge:
             )
 
             self.running = False
+
+            if self.worker is not None:
+
+                self.worker.join(
+                    timeout=1.0
+                )
+
+            self.worker = None
+
+            self.connected = False
+            self.api = None
 
             return False
 
@@ -178,11 +240,11 @@ class HulaBridge:
 
             while self.running:
 
+                command = None
+
                 # ==================================================
                 # GET COMMAND
                 # ==================================================
-
-                command = None
 
                 with self.command_lock:
 
@@ -229,11 +291,9 @@ class HulaBridge:
                         print(
                             "========================================"
                         )
-
                         print(
                             "HULA COMMAND ERROR"
                         )
-
                         print(
                             "========================================"
                         )
@@ -293,11 +353,9 @@ class HulaBridge:
             print(
                 "========================================"
             )
-
             print(
                 "HULA WORKER ERROR"
             )
-
             print(
                 "========================================"
             )
@@ -307,7 +365,9 @@ class HulaBridge:
             )
 
             self.connect_result = False
+
             self.connected = False
+
             self.busy = False
 
             with self.command_lock:
@@ -419,8 +479,7 @@ class HulaBridge:
             )
 
             print(
-                f"FORWARD "
-                f"{distance} cm "
+                f"FORWARD {distance} cm "
                 f"@ {speed} cm/s"
             )
 
@@ -470,8 +529,7 @@ class HulaBridge:
             )
 
             print(
-                f"BACKWARD "
-                f"{distance} cm "
+                f"BACKWARD {distance} cm "
                 f"@ {speed} cm/s"
             )
 
@@ -521,8 +579,7 @@ class HulaBridge:
             )
 
             print(
-                f"LEFT "
-                f"{distance} cm "
+                f"LEFT {distance} cm "
                 f"@ {speed} cm/s"
             )
 
@@ -572,8 +629,7 @@ class HulaBridge:
             )
 
             print(
-                f"RIGHT "
-                f"{distance} cm "
+                f"RIGHT {distance} cm "
                 f"@ {speed} cm/s"
             )
 
@@ -618,8 +674,7 @@ class HulaBridge:
             )
 
             print(
-                f"ROTATE LEFT "
-                f"{angle} degrees"
+                f"ROTATE LEFT {angle} degrees"
             )
 
             try:
@@ -662,8 +717,7 @@ class HulaBridge:
             )
 
             print(
-                f"ROTATE RIGHT "
-                f"{angle} degrees"
+                f"ROTATE RIGHT {angle} degrees"
             )
 
             try:
@@ -711,8 +765,7 @@ class HulaBridge:
             )
 
             print(
-                f"UP "
-                f"{distance} cm "
+                f"UP {distance} cm "
                 f"@ {speed} cm/s"
             )
 
@@ -762,8 +815,7 @@ class HulaBridge:
             )
 
             print(
-                f"DOWN "
-                f"{distance} cm "
+                f"DOWN {distance} cm "
                 f"@ {speed} cm/s"
             )
 
@@ -787,6 +839,88 @@ class HulaBridge:
 
             print(
                 "DOWN result:",
+                result
+            )
+
+            return (
+                True
+                if result is None
+                else bool(result)
+            )
+
+        # ==================================================
+        # CAMERA ANGLE
+        # ==================================================
+
+        if action == "camera_angle":
+
+            direction = args[
+                "direction"
+            ]
+
+            value = self._to_int(
+                args["value"],
+                "camera angle"
+            )
+
+            value = max(
+                0,
+                min(
+                    90,
+                    value
+                )
+            )
+
+            # --------------------------------------------------
+            # Hula mapping ที่ทดสอบกับตัวนี้
+            #
+            # Hula 1 = DOWN
+            # Hula 0 = UP
+            # --------------------------------------------------
+
+            if direction == "down":
+
+                hula_direction = 1
+
+            elif direction == "up":
+
+                hula_direction = 0
+
+            else:
+
+                print(
+                    "Unknown camera direction:",
+                    direction
+                )
+
+                return False
+
+            print(
+                f"CAMERA "
+                f"{direction.upper()} "
+                f"{value}"
+            )
+
+            try:
+
+                result = (
+                    self.api.Plane_cmd_camera_angle(
+                        hula_direction,
+                        value
+                    )
+                )
+
+            except Exception as e:
+
+                print(
+                    "CAMERA ANGLE exception:",
+                    repr(e)
+                )
+
+                return False
+
+            print(
+                "CAMERA ANGLE result:",
                 result
             )
 
@@ -914,6 +1048,28 @@ class HulaBridge:
 
         with self.command_lock:
 
+            # --------------------------------------------------
+            # ไม่รับ command ซ้อน
+            # --------------------------------------------------
+
+            if self.pending_command is not None:
+
+                print(
+                    f"Cannot submit '{action}': "
+                    "another command is already queued."
+                )
+
+                return False
+
+            if self.busy:
+
+                print(
+                    f"Cannot submit '{action}': "
+                    "another Hula command is still running."
+                )
+
+                return False
+
             self.pending_command = {
 
                 "action": action,
@@ -943,6 +1099,47 @@ class HulaBridge:
     def get_last_result(self):
 
         return self.last_result
+
+    # ==========================================================
+    # CAMERA ANGLE
+    # ==========================================================
+
+    def set_camera_angle(
+        self,
+        direction,
+        value
+    ):
+
+        if direction not in (
+            "up",
+            "down"
+        ):
+
+            print(
+                "Invalid camera direction:",
+                direction
+            )
+
+            return False
+
+        value = self._to_int(
+            value,
+            "camera angle"
+        )
+
+        value = max(
+            0,
+            min(
+                90,
+                value
+            )
+        )
+
+        return self.submit(
+            "camera_angle",
+            direction=direction,
+            value=value
+        )
 
     # ==========================================================
     # START CAMERA
@@ -1075,6 +1272,5 @@ class HulaBridge:
         self.connected = False
         self.api = None
 
-        print(
-            "Hula worker stopped"
-        )
+        # worker เป็นคนพิมพ์ "Hula worker stopped"
+        # เพื่อไม่ให้ log ซ้ำ

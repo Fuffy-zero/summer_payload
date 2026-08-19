@@ -5,6 +5,7 @@ import config
 
 from core.bridge.hula_bridge import HulaBridge
 from core.camera.camera import Camera
+from core.camera.camera_controller import CameraController
 from core.tracking.qr_tracking import QRTracker
 from core.mission.mission_controller import MissionController
 
@@ -18,6 +19,7 @@ def main():
 
     bridge = None
     camera = None
+    camera_controller = None
     tracker = None
     mission = None
 
@@ -88,6 +90,15 @@ def main():
         )
 
         # ==================================================
+        # CAMERA CONTROLLER
+        # ==================================================
+
+        camera_controller = CameraController(
+            bridge,
+            config
+        )
+
+        # ==================================================
         # QR TRACKER
         # ==================================================
 
@@ -107,6 +118,25 @@ def main():
         mission.start()
 
         # ==================================================
+        # SYNC CAMERA WITH START MODE
+        # ==================================================
+
+        print()
+        print(
+            "Setting camera to mission mode..."
+        )
+
+        if not camera_controller.set_mode(
+            mission.get_mode()
+        ):
+
+            print(
+                "Camera mode initialization failed"
+            )
+
+            return
+
+        # ==================================================
         # SYSTEM READY
         # ==================================================
 
@@ -120,6 +150,16 @@ def main():
         print(
             "Mode:",
             mission.get_mode()
+        )
+
+        print(
+            "Camera mode:",
+            camera_controller.get_mode()
+        )
+
+        print(
+            "Camera angle:",
+            camera_controller.get_angle()
         )
 
         print()
@@ -136,10 +176,18 @@ def main():
 
         print()
 
-        print("MANUAL CONTROL")
+        print("CONTROL")
 
         print(
             "  M           = Toggle Manual / Auto"
+        )
+
+        print(
+            "  [           = Camera Down"
+        )
+
+        print(
+            "  ]           = Camera Up"
         )
 
         print(
@@ -357,7 +405,7 @@ def main():
                 break
 
             # ==================================================
-            # M = TOGGLE MODE
+            # M = TOGGLE MODE + CAMERA
             # ==================================================
 
             elif key in (
@@ -370,17 +418,208 @@ def main():
                 print("TOGGLE MODE")
                 print("========================================")
 
-                mission.toggle_mode()
+                current_mode = (
+                    mission.get_mode()
+                )
+
+                if current_mode == "MANUAL":
+
+                    target_mode = "AUTO"
+
+                else:
+
+                    target_mode = "MANUAL"
 
                 print(
-                    "Current mode:",
+                    "Target mode:",
+                    target_mode
+                )
+
+                # --------------------------------------------------
+                # CAMERA FIRST
+                # --------------------------------------------------
+
+                camera_result = (
+                    camera_controller.set_mode(
+                        target_mode
+                    )
+                )
+
+                if not camera_result:
+
+                    print()
+                    print(
+                        "Mode change cancelled."
+                    )
+
+                    print(
+                        "Camera could not change mode."
+                    )
+
+                    continue
+
+                # --------------------------------------------------
+                # MISSION MODE
+                # --------------------------------------------------
+
+                mission_result = (
+                    mission.set_mode(
+                        target_mode
+                    )
+                )
+
+                if not mission_result:
+
+                    print()
+                    print(
+                        "WARNING:"
+                    )
+
+                    print(
+                        "Camera changed but mission mode "
+                        "could not change."
+                    )
+
+                    continue
+
+                print()
+                print("========================================")
+                print("MODE CHANGE COMPLETE")
+                print("========================================")
+
+                print(
+                    "Mission mode:",
                     mission.get_mode()
+                )
+
+                print(
+                    "Camera mode:",
+                    camera_controller.get_mode()
+                )
+
+                print(
+                    "Camera angle:",
+                    camera_controller.get_angle()
                 )
 
                 print(
                     "Mission state:",
                     mission.get_mission_state()
                 )
+
+            # ==================================================
+            # CAMERA DOWN
+            # ==================================================
+
+            elif key == ord("["):
+
+                if mission.is_manual():
+
+                    current_angle = (
+                        camera_controller.get_angle()
+                    )
+
+                    if current_angle is None:
+
+                        current_angle = (
+                            config.CAMERA_MANUAL_ANGLE
+                        )
+
+                    step = int(
+                        getattr(
+                            config,
+                            "CAMERA_MANUAL_STEP",
+                            5
+                        )
+                    )
+
+                    new_angle = (
+                        current_angle
+                        -
+                        step
+                    )
+
+                    print()
+                    print(
+                        "MANUAL CAMERA DOWN"
+                    )
+
+                    print(
+                        "Step:",
+                        step
+                    )
+
+                    print(
+                        "Angle:",
+                        new_angle
+                    )
+
+                    camera_controller.manual_angle(
+                        new_angle
+                    )
+
+                else:
+
+                    print(
+                        "Camera manual control disabled in AUTO mode."
+                    )
+
+            # ==================================================
+            # CAMERA UP
+            # ==================================================
+
+            elif key == ord("]"):
+
+                if mission.is_manual():
+
+                    current_angle = (
+                        camera_controller.get_angle()
+                    )
+
+                    if current_angle is None:
+
+                        current_angle = (
+                            config.CAMERA_MANUAL_ANGLE
+                        )
+
+                    step = int(
+                        getattr(
+                            config,
+                            "CAMERA_MANUAL_STEP",
+                            5
+                        )
+                    )
+
+                    new_angle = (
+                        current_angle
+                        +
+                        step
+                    )
+
+                    print()
+                    print(
+                        "MANUAL CAMERA UP"
+                    )
+
+                    print(
+                        "Step:",
+                        step
+                    )
+
+                    print(
+                        "Angle:",
+                        new_angle
+                    )
+
+                    camera_controller.manual_angle(
+                        new_angle
+                    )
+
+                else:
+
+                    print(
+                        "Camera manual control disabled in AUTO mode."
+                    )
 
             # ==================================================
             # R = RESET REQUEST

@@ -28,7 +28,10 @@ class MissionController:
             )
         ).upper()
 
-        if self.mode not in ("MANUAL", "AUTO"):
+        if self.mode not in (
+            "MANUAL",
+            "AUTO"
+        ):
 
             self.mode = "MANUAL"
 
@@ -59,16 +62,6 @@ class MissionController:
         self.qr_inside = False
 
         # QR รอบ Focus ปัจจุบันถูก Trigger แล้วหรือยัง
-        #
-        # False = ยังไม่ Trigger
-        # True  = Trigger ไปแล้ว
-        #
-        # เมื่อ QR ออกจาก Focus:
-        #     False
-        #
-        # เมื่อ QR กลับเข้า Focus:
-        #     Trigger ใหม่ได้ 1 ครั้ง
-        #
         self.qr_triggered_this_entry = False
 
         # ==========================================================
@@ -513,27 +506,6 @@ class MissionController:
     # ==========================================================
     # HANDLE QR
     # ==========================================================
-    #
-    # Known QR
-    #     |
-    #     +-- inside focus --> execute once
-    #     |
-    #     +-- outside focus
-    #              |
-    #              v
-    #         correction target
-    #              |
-    #              v
-    #          correction
-    #              |
-    #              v
-    #         back to focus
-    #              |
-    #              v
-    #         execute once again
-    #
-    # ANY recognized QR can become the current target.
-    # ==========================================================
 
     def handle_qr(
         self,
@@ -682,11 +654,7 @@ class MissionController:
                 )
 
                 # --------------------------------------------------
-                # สำคัญ:
-                #
-                # กลับเข้า Focus = เริ่ม Focus entry รอบใหม่
-                #
-                # เปิดสิทธิ์ Trigger อีกครั้ง
+                # กลับเข้า Focus = รอบใหม่
                 # --------------------------------------------------
 
                 self.qr_triggered_this_entry = False
@@ -704,7 +672,6 @@ class MissionController:
 
             if self.focus_qr_id != qr_id:
 
-                # QR ตัวใหม่
                 self.focus_qr_id = qr_id
 
                 self.target_qr_id = qr_id
@@ -725,7 +692,6 @@ class MissionController:
 
             else:
 
-                # QR ตัวเดิม
                 self.target_qr_id = qr_id
                 self.target_action = action
 
@@ -799,17 +765,13 @@ class MissionController:
         # QR OUTSIDE FOCUS
         # ======================================================
 
-        # ------------------------------------------------------
-        # CHECK TARGET CHANGE
-        # ------------------------------------------------------
-
         target_changed = (
             self.focus_qr_id != qr_id
         )
 
-        # ------------------------------------------------------
+        # ======================================================
         # NEW TARGET QR
-        # ------------------------------------------------------
+        # ======================================================
 
         if target_changed:
 
@@ -858,9 +820,9 @@ class MissionController:
 
             return
 
-        # ------------------------------------------------------
+        # ======================================================
         # SAME TARGET STILL OUTSIDE
-        # ------------------------------------------------------
+        # ======================================================
 
         self.target_qr_id = qr_id
         self.target_action = action
@@ -871,9 +833,9 @@ class MissionController:
         self.qr_inside = False
         self.focus_locked = False
 
-        # ------------------------------------------------------
+        # ======================================================
         # START CORRECTION
-        # ------------------------------------------------------
+        # ======================================================
 
         if not self.correction_active:
 
@@ -1242,10 +1204,12 @@ class MissionController:
 
         if abs(diff_x) >= abs(diff_y):
 
+            # QR อยู่ทางขวาของ Focus
             if diff_x > tolerance:
 
                 return "right"
 
+            # QR อยู่ทางซ้ายของ Focus
             if diff_x < -tolerance:
 
                 return "left"
@@ -1256,13 +1220,19 @@ class MissionController:
 
         else:
 
+            # QR อยู่ด้านล่างของ Focus
+            # ต้องขยับ BACKWARD
+
             if diff_y > tolerance:
 
-                return "down"
+                return "backward"
+
+            # QR อยู่ด้านบนของ Focus
+            # ต้องขยับ FORWARD
 
             if diff_y < -tolerance:
 
-                return "up"
+                return "forward"
 
         return None
 
@@ -1514,8 +1484,8 @@ class MissionController:
         if action in (
             "left",
             "right",
-            "up",
-            "down"
+            "forward",
+            "backward"
         ):
 
             accepted = self.bridge.submit(

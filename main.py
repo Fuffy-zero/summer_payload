@@ -1,13 +1,16 @@
-import cv2
 import time
+import sys
 
 import config
+
+from PySide6.QtWidgets import QApplication
 
 from core.bridge.hula_bridge import HulaBridge
 from core.camera.camera import Camera
 from core.camera.camera_controller import CameraController
 from core.tracking.qr_tracking import QRTracker
 from core.mission.mission_controller import MissionController
+from core.ui.main_window import MainWindow
 
 
 def main():
@@ -23,19 +26,22 @@ def main():
     tracker = None
     mission = None
 
-    # ==================================================
-    # RESET CONFIRMATION
-    # ==================================================
-
-    reset_confirm = False
-
-    # ==================================================
-    # FRAME INFO
-    # ==================================================
-
-    frame_info_printed = False
+    app = None
+    window = None
 
     try:
+
+        # ==================================================
+        # QT APPLICATION
+        # ==================================================
+
+        app = QApplication.instance()
+
+        if app is None:
+
+            app = QApplication(
+                sys.argv
+            )
 
         # ==================================================
         # BRIDGE
@@ -118,6 +124,16 @@ def main():
         mission.start()
 
         # ==================================================
+        # UI
+        # ==================================================
+
+        window = MainWindow()
+
+        window.show()
+
+        app.processEvents()
+
+        # ==================================================
         # SYNC CAMERA WITH START MODE
         # ==================================================
 
@@ -135,6 +151,398 @@ def main():
             )
 
             return
+
+        # ==================================================
+        # UI CONTROL CALLBACKS
+        # ==================================================
+
+        def toggle_mode():
+
+            print()
+            print("========================================")
+            print("TOGGLE MODE")
+            print("========================================")
+
+            current_mode = (
+                mission.get_mode()
+            )
+
+            if current_mode == "MANUAL":
+
+                target_mode = "AUTO"
+
+            else:
+
+                target_mode = "MANUAL"
+
+            print(
+                "Target mode:",
+                target_mode
+            )
+
+            # --------------------------------------------------
+            # CAMERA FIRST
+            # --------------------------------------------------
+
+            camera_result = (
+                camera_controller.set_mode(
+                    target_mode
+                )
+            )
+
+            if not camera_result:
+
+                print()
+                print(
+                    "Mode change cancelled."
+                )
+
+                print(
+                    "Camera could not change mode."
+                )
+
+                return
+
+            # --------------------------------------------------
+            # MISSION MODE
+            # --------------------------------------------------
+
+            mission_result = (
+                mission.set_mode(
+                    target_mode
+                )
+            )
+
+            if not mission_result:
+
+                print()
+                print(
+                    "WARNING:"
+                )
+
+                print(
+                    "Camera changed but mission mode "
+                    "could not change."
+                )
+
+                return
+
+            print()
+            print("========================================")
+            print("MODE CHANGE COMPLETE")
+            print("========================================")
+
+            print(
+                "Mission mode:",
+                mission.get_mode()
+            )
+
+            print(
+                "Camera mode:",
+                camera_controller.get_mode()
+            )
+
+            print(
+                "Camera angle:",
+                camera_controller.get_angle()
+            )
+
+            print(
+                "Mission state:",
+                mission.get_mission_state()
+            )
+
+        # ==================================================
+        # TAKE OFF
+        # ==================================================
+
+        def takeoff():
+
+            print(
+                "UI: TAKE OFF"
+            )
+
+            mission.manual_take_off()
+
+        # ==================================================
+        # LANDING
+        # ==================================================
+
+        def landing():
+
+            print(
+                "UI: LANDING"
+            )
+
+            mission.manual_landing()
+
+        # ==================================================
+        # FORWARD
+        # ==================================================
+
+        def forward():
+
+            print(
+                "UI: FORWARD"
+            )
+
+            mission.manual_forward()
+
+        # ==================================================
+        # BACKWARD
+        # ==================================================
+
+        def backward():
+
+            print(
+                "UI: BACKWARD"
+            )
+
+            mission.manual_backward()
+
+        # ==================================================
+        # LEFT
+        # ==================================================
+
+        def left():
+
+            print(
+                "UI: LEFT"
+            )
+
+            mission.manual_left()
+
+        # ==================================================
+        # RIGHT
+        # ==================================================
+
+        def right():
+
+            print(
+                "UI: RIGHT"
+            )
+
+            mission.manual_right()
+
+        # ==================================================
+        # ROTATE LEFT
+        # ==================================================
+
+        def rotate_left():
+
+            print(
+                "UI: ROTATE LEFT"
+            )
+
+            mission.manual_rotate_left()
+
+        # ==================================================
+        # ROTATE RIGHT
+        # ==================================================
+
+        def rotate_right():
+
+            print(
+                "UI: ROTATE RIGHT"
+            )
+
+            mission.manual_rotate_right()
+
+        # ==================================================
+        # UP
+        # ==================================================
+
+        def up():
+
+            print(
+                "UI: UP"
+            )
+
+            mission.manual_up()
+
+        # ==================================================
+        # DOWN
+        # ==================================================
+
+        def down():
+
+            print(
+                "UI: DOWN"
+            )
+
+            mission.manual_down()
+
+        # ==================================================
+        # CAMERA DOWN
+        # ==================================================
+
+        def camera_down():
+
+            if not mission.is_manual():
+
+                print(
+                    "Camera manual control disabled in AUTO mode."
+                )
+
+                return
+
+            current_angle = (
+                camera_controller.get_angle()
+            )
+
+            if current_angle is None:
+
+                current_angle = (
+                    config.CAMERA_MANUAL_ANGLE
+                )
+
+            step = int(
+                getattr(
+                    config,
+                    "CAMERA_MANUAL_STEP",
+                    5
+                )
+            )
+
+            new_angle = (
+                current_angle
+                -
+                step
+            )
+
+            print()
+            print(
+                "UI: CAMERA DOWN"
+            )
+
+            print(
+                "Step:",
+                step
+            )
+
+            print(
+                "Angle:",
+                new_angle
+            )
+
+            camera_controller.manual_angle(
+                new_angle
+            )
+
+        # ==================================================
+        # CAMERA UP
+        # ==================================================
+
+        def camera_up():
+
+            if not mission.is_manual():
+
+                print(
+                    "Camera manual control disabled in AUTO mode."
+                )
+
+                return
+
+            current_angle = (
+                camera_controller.get_angle()
+            )
+
+            if current_angle is None:
+
+                current_angle = (
+                    config.CAMERA_MANUAL_ANGLE
+                )
+
+            step = int(
+                getattr(
+                    config,
+                    "CAMERA_MANUAL_STEP",
+                    5
+                )
+            )
+
+            new_angle = (
+                current_angle
+                +
+                step
+            )
+
+            print()
+            print(
+                "UI: CAMERA UP"
+            )
+
+            print(
+                "Step:",
+                step
+            )
+
+            print(
+                "Angle:",
+                new_angle
+            )
+
+            camera_controller.manual_angle(
+                new_angle
+            )
+
+        # ==================================================
+        # RESET
+        # ==================================================
+
+        def reset():
+
+            print()
+            print(
+                "UI: RESET"
+            )
+
+            mission.reset_state()
+
+        # ==================================================
+        # QUIT
+        # ==================================================
+
+        def quit_program():
+
+            print()
+            print(
+                "UI: QUIT"
+            )
+
+            window.close()
+
+        # ==================================================
+        # CONNECT BUTTONS
+        # ==================================================
+
+        window.set_control_callbacks(
+
+            mode=toggle_mode,
+
+            takeoff=takeoff,
+            landing=landing,
+
+            forward=forward,
+            backward=backward,
+
+            left=left,
+            right=right,
+
+            rotate_left=rotate_left,
+            rotate_right=rotate_right,
+
+            up=up,
+            down=down,
+
+            camera_down=camera_down,
+            camera_up=camera_up,
+
+            reset=reset,
+
+            quit=quit_program
+
+        )
 
         # ==================================================
         # SYSTEM READY
@@ -176,69 +584,17 @@ def main():
 
         print()
 
-        print("CONTROL")
-
         print(
-            "  M           = Toggle Manual / Auto"
-        )
-
-        print(
-            "  [           = Camera Down"
-        )
-
-        print(
-            "  ]           = Camera Up"
-        )
-
-        print(
-            "  T           = Take Off"
-        )
-
-        print(
-            "  L           = Landing"
-        )
-
-        print(
-            "  Arrow Up    = Forward"
-        )
-
-        print(
-            "  Arrow Down  = Backward"
-        )
-
-        print(
-            "  Arrow Left  = Fly Left"
-        )
-
-        print(
-            "  Arrow Right = Fly Right"
-        )
-
-        print(
-            "  A           = Rotate Left"
-        )
-
-        print(
-            "  D           = Rotate Right"
-        )
-
-        print(
-            "  W           = Up"
-        )
-
-        print(
-            "  S           = Down"
-        )
-
-        print(
-            "  R           = Reset Flight State"
-        )
-
-        print(
-            "  Q           = Quit"
+            "UI CONTROL READY"
         )
 
         print()
+
+        # ==================================================
+        # FRAME INFO
+        # ==================================================
+
+        frame_info_printed = False
 
         # ==================================================
         # MAIN LOOP
@@ -301,22 +657,36 @@ def main():
                 )
 
                 # ==================================================
-                # DEBUG
+                # LIVE VIDEO
+                # ==================================================
+
+                live_frame = frame.copy()
+
+                # ==================================================
+                # DEBUG VIDEO
                 # ==================================================
 
                 if config.SHOW_DEBUG:
 
                     debug_frame = (
                         tracker.draw_debug(
-                            frame,
+                            frame.copy(),
                             state
                         )
                     )
 
-                    cv2.imshow(
-                        config.WINDOW_NAME,
-                        debug_frame
-                    )
+                else:
+
+                    debug_frame = frame.copy()
+
+                # ==================================================
+                # UI VIDEO
+                # ==================================================
+
+                window.update_video(
+                    live_frame,
+                    debug_frame
+                )
 
                 # ==================================================
                 # QR
@@ -337,451 +707,28 @@ def main():
             mission.update()
 
             # ==================================================
-            # KEYBOARD
+            # UPDATE UI STATUS
             # ==================================================
 
-            key = cv2.waitKeyEx(1)
+            window.update_status(
+                mission,
+                camera_controller
+            )
 
             # ==================================================
-            # RESET CONFIRMATION MODE
+            # PROCESS UI
             # ==================================================
 
-            if reset_confirm:
+            app.processEvents()
 
-                # ------------------------------------------
-                # ENTER = CONFIRM
-                # ------------------------------------------
-
-                if key in (
-                    10,
-                    13
-                ):
-
-                    print()
-                    print("========================================")
-                    print("RESET CONFIRMED")
-                    print("========================================")
-
-                    mission.reset_state()
-
-                    reset_confirm = False
-
-                # ------------------------------------------
-                # Q = CANCEL
-                # ------------------------------------------
-
-                elif key in (
-                    ord("q"),
-                    ord("Q")
-                ):
-
-                    print()
-                    print(
-                        "Reset cancelled"
-                    )
-
-                    reset_confirm = False
-
-                time.sleep(
-                    0.01
-                )
-
-                continue
-
-            # ==================================================
-            # Q = QUIT
-            # ==================================================
-
-            if key in (
-                ord("q"),
-                ord("Q")
-            ):
+            if window.closed:
 
                 print()
                 print(
-                    "Q pressed"
+                    "UI window closed"
                 )
 
                 break
-
-            # ==================================================
-            # M = TOGGLE MODE + CAMERA
-            # ==================================================
-
-            elif key in (
-                ord("m"),
-                ord("M")
-            ):
-
-                print()
-                print("========================================")
-                print("TOGGLE MODE")
-                print("========================================")
-
-                current_mode = (
-                    mission.get_mode()
-                )
-
-                if current_mode == "MANUAL":
-
-                    target_mode = "AUTO"
-
-                else:
-
-                    target_mode = "MANUAL"
-
-                print(
-                    "Target mode:",
-                    target_mode
-                )
-
-                # --------------------------------------------------
-                # CAMERA FIRST
-                # --------------------------------------------------
-
-                camera_result = (
-                    camera_controller.set_mode(
-                        target_mode
-                    )
-                )
-
-                if not camera_result:
-
-                    print()
-                    print(
-                        "Mode change cancelled."
-                    )
-
-                    print(
-                        "Camera could not change mode."
-                    )
-
-                    continue
-
-                # --------------------------------------------------
-                # MISSION MODE
-                # --------------------------------------------------
-
-                mission_result = (
-                    mission.set_mode(
-                        target_mode
-                    )
-                )
-
-                if not mission_result:
-
-                    print()
-                    print(
-                        "WARNING:"
-                    )
-
-                    print(
-                        "Camera changed but mission mode "
-                        "could not change."
-                    )
-
-                    continue
-
-                print()
-                print("========================================")
-                print("MODE CHANGE COMPLETE")
-                print("========================================")
-
-                print(
-                    "Mission mode:",
-                    mission.get_mode()
-                )
-
-                print(
-                    "Camera mode:",
-                    camera_controller.get_mode()
-                )
-
-                print(
-                    "Camera angle:",
-                    camera_controller.get_angle()
-                )
-
-                print(
-                    "Mission state:",
-                    mission.get_mission_state()
-                )
-
-            # ==================================================
-            # CAMERA DOWN
-            # ==================================================
-
-            elif key == ord("["):
-
-                if mission.is_manual():
-
-                    current_angle = (
-                        camera_controller.get_angle()
-                    )
-
-                    if current_angle is None:
-
-                        current_angle = (
-                            config.CAMERA_MANUAL_ANGLE
-                        )
-
-                    step = int(
-                        getattr(
-                            config,
-                            "CAMERA_MANUAL_STEP",
-                            5
-                        )
-                    )
-
-                    new_angle = (
-                        current_angle
-                        -
-                        step
-                    )
-
-                    print()
-                    print(
-                        "MANUAL CAMERA DOWN"
-                    )
-
-                    print(
-                        "Step:",
-                        step
-                    )
-
-                    print(
-                        "Angle:",
-                        new_angle
-                    )
-
-                    camera_controller.manual_angle(
-                        new_angle
-                    )
-
-                else:
-
-                    print(
-                        "Camera manual control disabled in AUTO mode."
-                    )
-
-            # ==================================================
-            # CAMERA UP
-            # ==================================================
-
-            elif key == ord("]"):
-
-                if mission.is_manual():
-
-                    current_angle = (
-                        camera_controller.get_angle()
-                    )
-
-                    if current_angle is None:
-
-                        current_angle = (
-                            config.CAMERA_MANUAL_ANGLE
-                        )
-
-                    step = int(
-                        getattr(
-                            config,
-                            "CAMERA_MANUAL_STEP",
-                            5
-                        )
-                    )
-
-                    new_angle = (
-                        current_angle
-                        +
-                        step
-                    )
-
-                    print()
-                    print(
-                        "MANUAL CAMERA UP"
-                    )
-
-                    print(
-                        "Step:",
-                        step
-                    )
-
-                    print(
-                        "Angle:",
-                        new_angle
-                    )
-
-                    camera_controller.manual_angle(
-                        new_angle
-                    )
-
-                else:
-
-                    print(
-                        "Camera manual control disabled in AUTO mode."
-                    )
-
-            # ==================================================
-            # R = RESET REQUEST
-            # ==================================================
-
-            elif key in (
-                ord("r"),
-                ord("R")
-            ):
-
-                print()
-                print("========================================")
-                print("RESET FLIGHT STATE?")
-                print("========================================")
-
-                print(
-                    "Press ENTER to confirm"
-                )
-
-                print(
-                    "Press Q to cancel"
-                )
-
-                reset_confirm = True
-
-            # ==================================================
-            # W = UP
-            # ==================================================
-
-            elif key in (
-                ord("w"),
-                ord("W")
-            ):
-
-                print(
-                    "MANUAL: UP"
-                )
-
-                mission.manual_up()
-
-            # ==================================================
-            # S = DOWN
-            # ==================================================
-
-            elif key in (
-                ord("s"),
-                ord("S")
-            ):
-
-                print(
-                    "MANUAL: DOWN"
-                )
-
-                mission.manual_down()
-
-            # ==================================================
-            # A = ROTATE LEFT
-            # ==================================================
-
-            elif key in (
-                ord("a"),
-                ord("A")
-            ):
-
-                print(
-                    "MANUAL: ROTATE LEFT"
-                )
-
-                mission.manual_rotate_left()
-
-            # ==================================================
-            # D = ROTATE RIGHT
-            # ==================================================
-
-            elif key in (
-                ord("d"),
-                ord("D")
-            ):
-
-                print(
-                    "MANUAL: ROTATE RIGHT"
-                )
-
-                mission.manual_rotate_right()
-
-            # ==================================================
-            # T = TAKE OFF
-            # ==================================================
-
-            elif key in (
-                ord("t"),
-                ord("T")
-            ):
-
-                print(
-                    "MANUAL: TAKE OFF"
-                )
-
-                mission.manual_take_off()
-
-            # ==================================================
-            # L = LANDING
-            # ==================================================
-
-            elif key in (
-                ord("l"),
-                ord("L")
-            ):
-
-                print(
-                    "MANUAL: LANDING"
-                )
-
-                mission.manual_landing()
-
-            # ==================================================
-            # ARROW UP
-            # ==================================================
-
-            elif key == 2490368:
-
-                print(
-                    "MANUAL: FORWARD"
-                )
-
-                mission.manual_forward()
-
-            # ==================================================
-            # ARROW DOWN
-            # ==================================================
-
-            elif key == 2621440:
-
-                print(
-                    "MANUAL: BACKWARD"
-                )
-
-                mission.manual_backward()
-
-            # ==================================================
-            # ARROW LEFT
-            # ==================================================
-
-            elif key == 2424832:
-
-                print(
-                    "MANUAL: LEFT"
-                )
-
-                mission.manual_left()
-
-            # ==================================================
-            # ARROW RIGHT
-            # ==================================================
-
-            elif key == 2555904:
-
-                print(
-                    "MANUAL: RIGHT"
-                )
-
-                mission.manual_right()
 
             time.sleep(
                 0.01
@@ -802,7 +749,7 @@ def main():
         )
 
         print(
-            e
+            repr(e)
         )
 
     finally:
@@ -888,11 +835,21 @@ def main():
         )
 
         # ==================================================
-        # OPENCV
+        # UI
         # ==================================================
 
+        if window is not None:
+
+            try:
+
+                window.close()
+
+            except Exception:
+
+                pass
+
         print(
-            "[SHUTDOWN 7] Skip OpenCV destroy"
+            "[SHUTDOWN 7] UI closed"
         )
 
         print()

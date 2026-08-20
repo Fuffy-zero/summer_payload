@@ -289,7 +289,111 @@ class MissionController:
     def get_mission_state(self):
 
         return self.mission_state
+        # ==========================================================
+    # UI STATUS GETTERS
+    # ==========================================================
 
+    def get_flight_state(self):
+
+        return self.flight_state
+
+    def get_target_qr(self):
+
+        return self.target_qr_id
+
+    def get_target_action(self):
+
+        return self.target_action
+
+    def get_position(self):
+
+        if (
+            self.last_center_x is None
+            or
+            self.last_center_y is None
+        ):
+
+            return None
+
+        return (
+            self.last_center_x,
+            self.last_center_y
+        )
+
+    def get_focus_position(self):
+
+        if (
+            self.focus_x is None
+            or
+            self.focus_y is None
+        ):
+
+            return None
+
+        return (
+            self.focus_x,
+            self.focus_y
+        )
+
+    def is_focus_locked(self):
+
+        return self.focus_locked
+
+    def is_correction_active(self):
+
+        return self.correction_active
+
+    def get_correction_count(self):
+
+        return self.correction_count
+
+    def get_current_action(self):
+
+        return self.current_action
+
+    def get_current_source(self):
+
+        return self.current_source
+
+    def get_correction_distance(self):
+
+        return float(
+            getattr(
+                self.config,
+                "CORRECTION_DISTANCE",
+                5.0
+            )
+        )
+
+    def get_correction_speed(self):
+
+        return float(
+            getattr(
+                self.config,
+                "CORRECTION_SPEED",
+                10.0
+            )
+        )
+
+    def get_correction_status(self):
+
+        if self.current_source == "AUTO CORRECTION":
+
+            return "CORRECTING"
+
+        if self.correction_active:
+
+            return "CORRECTING"
+
+        if self.mission_state == "EXECUTING":
+
+            return "EXECUTING"
+
+        if self.focus_locked:
+
+            return "QR LOCKED"
+
+        return self.mission_state
     # ==========================================================
     # SET MISSION STATE
     # ==========================================================

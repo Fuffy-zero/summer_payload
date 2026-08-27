@@ -710,6 +710,76 @@ class MissionController:
     # GET GLOBAL FOCUS POINT
     # ==========================================================
 
+    def _get_qr_id_from_source(
+        self,
+        source
+    ):
+
+        # ------------------------------------------------------
+        # source มีรูปแบบ "QR qr3" -> ดึงเอาแค่ "qr3"
+        # ------------------------------------------------------
+
+        if not self._is_qr_source(
+            source
+        ):
+
+            return None
+
+        return str(
+            source
+        )[3:].strip()
+
+    def _get_qr_movement_override(
+        self,
+        qr_id
+    ):
+
+        # ------------------------------------------------------
+        # QR_MOVEMENT_OVERRIDES ใน config.py
+        # ใช้กำหนดระยะ/ความเร็วเฉพาะของแต่ละ QR
+        # ------------------------------------------------------
+
+        overrides = getattr(
+            self.config,
+            "QR_MOVEMENT_OVERRIDES",
+            {}
+        )
+
+        if not qr_id:
+            return {}
+
+        return overrides.get(
+            qr_id,
+            {}
+        ) or {}
+
+    def _resolve_distance_speed(
+        self,
+        source,
+        default_distance,
+        default_speed
+    ):
+
+        qr_id = self._get_qr_id_from_source(
+            source
+        )
+
+        override = self._get_qr_movement_override(
+            qr_id
+        )
+
+        distance = override.get(
+            "distance",
+            default_distance
+        )
+
+        speed = override.get(
+            "speed",
+            default_speed
+        )
+
+        return distance, speed
+
     def _get_focus_point(self):
 
         point = getattr(
@@ -2608,10 +2678,16 @@ class MissionController:
 
         elif action == "forward":
 
+            distance, speed = self._resolve_distance_speed(
+                source,
+                self.config.FORWARD_DISTANCE,
+                self.config.FORWARD_SPEED
+            )
+
             accepted = self.bridge.submit(
                 "forward",
-                distance=self.config.FORWARD_DISTANCE,
-                speed=self.config.FORWARD_SPEED
+                distance=distance,
+                speed=speed
             )
 
         # ======================================================
@@ -2620,10 +2696,16 @@ class MissionController:
 
         elif action == "backward":
 
+            distance, speed = self._resolve_distance_speed(
+                source,
+                self.config.BACKWARD_DISTANCE,
+                self.config.BACKWARD_SPEED
+            )
+
             accepted = self.bridge.submit(
                 "backward",
-                distance=self.config.BACKWARD_DISTANCE,
-                speed=self.config.BACKWARD_SPEED
+                distance=distance,
+                speed=speed
             )
 
         # ======================================================
@@ -2632,10 +2714,16 @@ class MissionController:
 
         elif action == "left":
 
+            distance, speed = self._resolve_distance_speed(
+                source,
+                self.config.LEFT_DISTANCE,
+                self.config.LEFT_SPEED
+            )
+
             accepted = self.bridge.submit(
                 "left",
-                distance=self.config.LEFT_DISTANCE,
-                speed=self.config.LEFT_SPEED
+                distance=distance,
+                speed=speed
             )
 
         # ======================================================
@@ -2644,10 +2732,16 @@ class MissionController:
 
         elif action == "right":
 
+            distance, speed = self._resolve_distance_speed(
+                source,
+                self.config.RIGHT_DISTANCE,
+                self.config.RIGHT_SPEED
+            )
+
             accepted = self.bridge.submit(
                 "right",
-                distance=self.config.RIGHT_DISTANCE,
-                speed=self.config.RIGHT_SPEED
+                distance=distance,
+                speed=speed
             )
 
         # ======================================================

@@ -6,11 +6,12 @@
 # ==========================================================
 # QR ACTIONS
 # ==========================================================
+# left,right,forward,backward,landing,take_off
 
 QR_ACTIONS = {
 
-    "qr1": "right",
-    "qr2": "left",
+    "qr1": "forward",
+    "qr2": "forward",
     "qr3": "forward",
     "qr4": "backward",
     "qr5": "left",
@@ -37,7 +38,48 @@ RIGHT_SPEED = 50
 
 
 # ==========================================================
-# QR ROTATION
+# QR MOVEMENT OVERRIDES (ต่อ QR)
+# ==========================================================
+#
+# ใช้กำหนดระยะ/ความเร็วเฉพาะของแต่ละ QR แยกกัน
+# ถ้า QR ไหนไม่ได้กำหนดไว้ที่นี่ (หรือกำหนดแค่บางค่า)
+# จะใช้ค่า default ตามทิศทางด้านบนแทน (เช่น LEFT_DISTANCE)
+#
+# รูปแบบ:
+#
+# "qr_id": {
+#     "distance": ระยะที่ต้องการ (หน่วยเดียวกับ *_DISTANCE),
+#     "speed": ความเร็วที่ต้องการ (หน่วยเดียวกับ *_SPEED),
+# }
+#
+# กำหนดแค่ "distance" หรือแค่ "speed" ก็ได้
+# ค่าที่ไม่ได้กำหนดจะ fallback ไปใช้ default ของทิศทางนั้นแทน
+#
+# ตัวอย่าง:
+#
+# QR_ACTIONS มี "qr1": "left", "qr3": "left", "qr5": "left"
+# แต่ต้องการให้แต่ละตัวเดินคนละระยะ/ความเร็ว
+#
+# QR_MOVEMENT_OVERRIDES = {
+#     "qr1": {"distance": 80,  "speed": 40},
+#     "qr3": {"distance": 120, "speed": 60},
+#     "qr5": {"distance": 50},              # ใช้ LEFT_SPEED ปกติ
+# }
+
+QR_MOVEMENT_OVERRIDES = {
+
+    "qr1": {"distance": 50,  "speed": 50},
+    "qr2": {"distance": 200, "speed": 10},
+    "qr3": {"distance": 100, "speed": 50},
+    "qr4": {"distance": 100,  "speed": 50},
+    "qr5": {"distance": 100, "speed": 50},
+    "qr6": {"distance": 100, "speed": 50},
+
+}
+
+
+# ==========================================================
+# QR ROTATION เป็นองศา
 # ==========================================================
 
 ROTATE_LEFT_ANGLE = 30

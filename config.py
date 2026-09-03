@@ -11,11 +11,11 @@
 QR_ACTIONS = {
 
     "qr1": "forward",
-    "qr2": "forward",
-    "qr3": "forward",
-    "qr4": "backward",
-    "qr5": "left",
-    "qr6": "right",
+    "qr2": "right",
+    "qr3": "left",
+    "qr4": "forward",
+    "qr5": "landing",
+    "qr6": "landing",
 
 }
 
@@ -27,7 +27,7 @@ QR_ACTIONS = {
 FORWARD_DISTANCE = 100
 FORWARD_SPEED = 50
 
-BACKWARD_DISTANCE = 200
+BACKWARD_DISTANCE = 100
 BACKWARD_SPEED = 50
 
 LEFT_DISTANCE = 100
@@ -68,10 +68,10 @@ RIGHT_SPEED = 50
 
 QR_MOVEMENT_OVERRIDES = {
 
-    "qr1": {"distance": 50,  "speed": 50},
-    "qr2": {"distance": 200, "speed": 10},
-    "qr3": {"distance": 100, "speed": 50},
-    "qr4": {"distance": 100,  "speed": 50},
+    "qr1": {"distance": 200,  "speed": 50},
+    "qr2": {"distance": 300, "speed": 50},
+    "qr3": {"distance": 150, "speed": 50},
+    "qr4": {"distance": 120,  "speed": 50},
     "qr5": {"distance": 100, "speed": 50},
     "qr6": {"distance": 100, "speed": 50},
 
@@ -118,6 +118,7 @@ MANUAL_VERTICAL_SPEED = 120
 
 # เวลาที่ต้องรอหลัง LANDING สำเร็จ
 # ก่อนอนุญาตให้ TAKEOFF ใหม่
+# ไม่ควรต่ำกว่า 10 วินาที
 
 LANDING_SETTLE_TIME = 15.0
 
@@ -188,7 +189,7 @@ CORRECTION_SPEED = 20
 
 # จำนวนครั้งสูงสุดที่ระบบจะพยายาม Correction
 
-CORRECTION_MAX_COUNT = 5
+CORRECTION_MAX_COUNT = 30
 
 
 # เวลาระหว่าง Correction แต่ละครั้ง
@@ -198,7 +199,7 @@ CORRECTION_INTERVAL = 2
 
 # เวลาสูงสุดที่อนุญาตให้ Correction
 
-CORRECTION_TIMEOUT = 10
+CORRECTION_TIMEOUT = 60
 
 
 # ==========================================================

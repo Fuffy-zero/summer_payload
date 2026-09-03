@@ -299,11 +299,18 @@ payload carrier/
 │   ├── bridge/
 │   │   └── hula_bridge.py
 │   │
+│   ├──camera
+│   │   ├── camera_controller.py
+│   │   └── camera.py
+│   │
 │   ├── mission/
 │   │   └── mission_controller.py
 │   │
-│   └── qr/
-│       └── qr_tracker.py
+│   ├── tracking/
+│   │   └── qr_tracker.py
+│   │
+│   └── ui/
+│       └──main_window.py
 │
 └── .venv/
 ```
